@@ -1,5 +1,6 @@
 package com.autoloupe.pipeline.analysis;
 
+import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.autoloupe.pipeline.analysis.domain.EvaluationReport;
 import com.autoloupe.pipeline.analysis.domain.TriageMetric;
@@ -16,12 +17,13 @@ import java.util.function.Consumer;
 public class AssetEvaluationEngine implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(AssetEvaluationEngine.class);
-
+    private final NeuralSubjectLocator locator;
     private final List<AssetEvaluator> evaluators;
     private final ExecutorService evaluationWorkerPool;
     private Consumer<EvaluationReport> outputConsumer;
 
-    public AssetEvaluationEngine(List<AssetEvaluator> evaluators) {
+    public AssetEvaluationEngine(NeuralSubjectLocator locator, List<AssetEvaluator> evaluators) {
+        this.locator = locator;
         this.evaluators = List.copyOf(evaluators);
         // Spin up an unbounded execution plane for async analysis tasks
         this.evaluationWorkerPool = Executors.newVirtualThreadPerTaskExecutor();
@@ -38,17 +40,19 @@ public class AssetEvaluationEngine implements AutoCloseable {
      * Entry point for Stage 2 hand-off. Dispatches an isolated virtual thread
      * task to compile analysis reports without blocking ingestion.
      */
-    public void submitForAnalysis(UnifiedImageAsset asset) {
+    public void submitForAnalysis(ImageProcessingContext context) {
         evaluationWorkerPool.submit(() -> {
-            log.debug("Beginning evaluation pipeline execution for asset: {}", asset.id());
+            log.debug("Beginning evaluation pipeline execution for asset: {}", context.asset().id());
             List<TriageMetric> compiledMetrics = new ArrayList<>();
+
+
 
             for (AssetEvaluator evaluator : evaluators) {
                 try {
-                    TriageMetric metric = evaluator.evaluate(asset);
+                    TriageMetric metric = evaluator.evaluate(context);
                     compiledMetrics.add(metric);
                 } catch (Exception e) {
-                    log.error("Evaluator failure executing rule mapping on asset {}: {}", asset.id(), e.getMessage(), e);
+                    log.error("Evaluator failure executing rule mapping on asset {}: {}", context.asset().id(), e.getMessage(), e);
                     compiledMetrics.add(new TriageMetric(
                             evaluator.getClass().getSimpleName(),
                             "ERROR",
@@ -58,7 +62,7 @@ public class AssetEvaluationEngine implements AutoCloseable {
             }
 
             EvaluationReport report = new EvaluationReport(
-                    asset.id(),
+                    context.asset().id(),
                     Instant.now(),
                     List.copyOf(compiledMetrics)
             );

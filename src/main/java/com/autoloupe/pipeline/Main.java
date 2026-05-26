@@ -2,8 +2,13 @@ package com.autoloupe.pipeline;
 
 
 import com.autoloupe.pipeline.analysis.AssetEvaluationEngine;
+import com.autoloupe.pipeline.analysis.ImageProcessingContext;
 import com.autoloupe.pipeline.analysis.evaluators.LensOptimumZoneEvaluator;
+import com.autoloupe.pipeline.analysis.evaluators.TargetAreaFocusEvaluator;
+import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
+import com.autoloupe.pipeline.extraction.PreviewExtractionStrategyRegistry;
+import com.autoloupe.pipeline.service.PreviewImageExtractor;
 import com.autoloupe.pipeline.factory.ImageAssetFactoryComposite;
 import com.autoloupe.pipeline.service.IngestEngine;
 
@@ -22,18 +27,21 @@ public class Main {
         }
 
         // 1. Initialize Stage 3 Evaluation Infrastructure
-        AssetEvaluationEngine evaluationEngine = new AssetEvaluationEngine(List.of(
-                new LensOptimumZoneEvaluator() // We can implement this baseline rule next!
-        ));
+        AssetEvaluationEngine evaluationEngine = new AssetEvaluationEngine(new NeuralSubjectLocator(Path.of("D:\\OnnxModels\\yolov8n.optimized.onnx")),
+                List.of(new LensOptimumZoneEvaluator(), new TargetAreaFocusEvaluator()));
+
+        PreviewExtractionStrategyRegistry extractionStrategyRegistry = new PreviewExtractionStrategyRegistry();
 
 // 2. Wire Stage 2's Downstream Pipeline Consumer straight to Stage 3's Input
-        Consumer<UnifiedImageAsset> stage2ToStage3Wire = evaluationEngine::submitForAnalysis;
+        Consumer<ImageProcessingContext> stage2ToStage3Wire = evaluationEngine::submitForAnalysis;
 
 // 3. Instantiate IngestEngine with the decoupled pipeline bridge
         IngestEngine ingestEngine = new IngestEngine(
                 autoloupeIngestFolder,
                 new ImageAssetFactoryComposite(),
-                stage2ToStage3Wire
+                stage2ToStage3Wire,
+                extractionStrategyRegistry,
+                new NeuralSubjectLocator(Path.of("D:\\OnnxModels\\yolov8n.onnx"))
         );
 
         // Standard dummy handler acting as our downstream Stage 3 connection wire

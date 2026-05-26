@@ -1,5 +1,6 @@
 package com.autoloupe.pipeline.analysis;
 
+import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.autoloupe.pipeline.analysis.domain.EvaluationReport;
 import com.autoloupe.pipeline.analysis.domain.TriageMetric;
@@ -27,6 +28,7 @@ class AssetEvaluationEngineTest {
 
     private AssetEvaluationEngine evaluationEngine;
 
+    @Mock private NeuralSubjectLocator mockLocator;
     @Mock private AssetEvaluator mockEvaluator1;
     @Mock private AssetEvaluator mockEvaluator2;
 
@@ -45,7 +47,7 @@ class AssetEvaluationEngineTest {
                 new UnifiedImageAsset.ImageDimensions(6144, 4096, 0)
         );
 
-        evaluationEngine = new AssetEvaluationEngine(List.of(mockEvaluator1, mockEvaluator2));
+        evaluationEngine = new AssetEvaluationEngine(mockLocator, List.of(mockEvaluator1, mockEvaluator2));
     }
 
     @Test
@@ -54,8 +56,10 @@ class AssetEvaluationEngineTest {
         TriageMetric metric1 = new TriageMetric("Rule1", "PASS", "Details 1");
         TriageMetric metric2 = new TriageMetric("Rule2", "WARN", "Details 2");
 
-        when(mockEvaluator1.evaluate(stubAsset)).thenReturn(metric1);
-        when(mockEvaluator2.evaluate(stubAsset)).thenReturn(metric2);
+        ImageProcessingContext context = new ImageProcessingContext(stubAsset, null, Optional.empty());
+
+        when(mockEvaluator1.evaluate(context)).thenReturn(metric1);
+        when(mockEvaluator2.evaluate(context)).thenReturn(metric2);
 
         // Track asynchronous output from the engine using a latch
         CountDownLatch latch = new CountDownLatch(1);
@@ -67,7 +71,7 @@ class AssetEvaluationEngineTest {
         });
 
         // Submit the asset (simulating hand-off from Stage 2 IngestEngine)
-        evaluationEngine.submitForAnalysis(stubAsset);
+        evaluationEngine.submitForAnalysis(context);
 
         // Wait for worker threads to complete processing
         boolean completedCleanly = latch.await(2, TimeUnit.SECONDS);

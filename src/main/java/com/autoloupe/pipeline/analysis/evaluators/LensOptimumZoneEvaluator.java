@@ -1,5 +1,6 @@
 package com.autoloupe.pipeline.analysis.evaluators;
 
+import com.autoloupe.pipeline.analysis.ImageProcessingContext;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.autoloupe.pipeline.analysis.AssetEvaluator;
 import com.autoloupe.pipeline.analysis.domain.TriageMetric;
@@ -11,7 +12,9 @@ public class LensOptimumZoneEvaluator implements AssetEvaluator {
     private static final String RULE_NAME = "LENS_OPTIMUM_ZONE";
 
     @Override
-    public TriageMetric evaluate(UnifiedImageAsset asset) {
+    public TriageMetric evaluate(ImageProcessingContext context) {
+
+        UnifiedImageAsset asset = context.asset();
         Optional<Double> fNumberOpt = asset.exposure().fNumber();
 
         // Guard against adapted vintage glass or flash telemetry failure where f-number is unrecorded

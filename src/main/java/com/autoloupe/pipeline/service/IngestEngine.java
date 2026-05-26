@@ -1,5 +1,8 @@
 package com.autoloupe.pipeline.service;
 
+import com.autoloupe.pipeline.analysis.ImageProcessingContext;
+import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
+import com.autoloupe.pipeline.extraction.PreviewExtractionStrategyRegistry;
 import com.autoloupe.pipeline.factory.ImageAssetFactoryComposite;
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.metadata.Metadata;
@@ -7,9 +10,13 @@ import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -20,8 +27,10 @@ public class IngestEngine implements Runnable, AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(IngestEngine.class);
 
     private final Path ingestDirectory;
-    private final Consumer<UnifiedImageAsset> downstreamPipeline;
+    private final Consumer<ImageProcessingContext> downstreamPipeline;
     private final ImageAssetFactoryComposite factoryRegistry;
+    private final PreviewExtractionStrategyRegistry extractionStrategies;
+    private final NeuralSubjectLocator locator;
     private final QuarantineHandler quarantineHandler;
     private final ExecutorService ioWorkerPool;
 
@@ -31,11 +40,14 @@ public class IngestEngine implements Runnable, AutoCloseable {
     public IngestEngine(
             Path ingestDirectory,
             ImageAssetFactoryComposite factoryRegistry,
-            Consumer<UnifiedImageAsset> downstreamPipeline
+            Consumer<ImageProcessingContext> downstreamPipeline,
+            PreviewExtractionStrategyRegistry extractionStrategies, NeuralSubjectLocator locator
     ) {
         this.ingestDirectory = ingestDirectory;
         this.factoryRegistry = factoryRegistry;
         this.downstreamPipeline = downstreamPipeline;
+        this.extractionStrategies = extractionStrategies;
+        this.locator = locator;
         this.quarantineHandler = new QuarantineHandler(); // Default timings for high-MP raw files
         this.ioWorkerPool = Executors.newVirtualThreadPerTaskExecutor();
         this.ioPermitGate = new Semaphore(4); // Up to 4 massive images actively parsed at any millisecond
@@ -89,6 +101,12 @@ public class IngestEngine implements Runnable, AutoCloseable {
 
                 // Delegate to our decoupled strategy layer to parse vendor-specific metrics
                 UnifiedImageAsset imageAsset = factoryRegistry.process(targetPath, metadata);
+                BufferedImage previewFrame = extractionStrategies.process(imageAsset, metadata);
+                Rectangle subjectLocale = locator.detectPrimarySubject(previewFrame);
+
+
+
+                ImageProcessingContext context = new ImageProcessingContext(imageAsset, previewFrame, Optional.ofNullable(subjectLocale));
 
                 log.info("Asset registered successfully -> [{}]. Camera: {} {}, Lens: {}",
                         imageAsset.rawFilePath().getFileName(),
@@ -96,7 +114,7 @@ public class IngestEngine implements Runnable, AutoCloseable {
                         imageAsset.camera().lens().modelName());
 
                 // Step 3: Hand off clean domain record to Stage 3 evaluation
-                downstreamPipeline.accept(imageAsset);
+                downstreamPipeline.accept(context);
 
             } finally {
                 // Always unlock the gate so the next file waiting on the thread deck can enter

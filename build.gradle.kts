@@ -9,6 +9,7 @@ version = "1.0-SNAPSHOT"
 dependencies {
     // 1. The core EXIF and MakerNotes metadata extraction framework
     implementation("com.drewnoakes:metadata-extractor:2.19.0")
+    implementation("com.microsoft.onnxruntime:onnxruntime:1.18.0")
 
     // 2. Logging Facade and simple console implementation
     implementation("org.slf4j:slf4j-api:2.0.13")

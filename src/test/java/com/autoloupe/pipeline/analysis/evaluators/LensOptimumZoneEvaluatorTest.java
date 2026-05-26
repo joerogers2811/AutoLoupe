@@ -1,5 +1,6 @@
 package com.autoloupe.pipeline.analysis.evaluators;
 
+import com.autoloupe.pipeline.analysis.ImageProcessingContext;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset.*;
 import com.autoloupe.pipeline.analysis.domain.TriageMetric;
@@ -32,8 +33,9 @@ class LensOptimumZoneEvaluatorTest {
     @DisplayName("Should flag peak performance when shot in the optical sweet spot (e.g., f/4.0)")
     void shouldIdentifySweetSpot() {
         UnifiedImageAsset asset = createTestAsset(pentaxStarFiftyProfile, 4.0);
+        ImageProcessingContext context = new ImageProcessingContext(asset, null, Optional.empty());
 
-        TriageMetric metric = evaluator.evaluate(asset);
+        TriageMetric metric = evaluator.evaluate(context);
 
         assertEquals("LENS_OPTIMUM_ZONE", metric.ruleName());
         assertEquals("PEAK", metric.status());
@@ -44,8 +46,9 @@ class LensOptimumZoneEvaluatorTest {
     @DisplayName("Should warn when shot wide-open (e.g., f/1.4) where aberrations may occur")
     void shouldIdentifyWideOpen() {
         UnifiedImageAsset asset = createTestAsset(pentaxStarFiftyProfile, 1.4);
+        ImageProcessingContext context = new ImageProcessingContext(asset, null, Optional.empty());
 
-        TriageMetric metric = evaluator.evaluate(asset);
+        TriageMetric metric = evaluator.evaluate(context);
 
         assertEquals("PEAK_LIMIT", metric.status());
         assertTrue(metric.assessment().contains("Shot wide open"));
@@ -55,8 +58,9 @@ class LensOptimumZoneEvaluatorTest {
     @DisplayName("Should warn when severe diffraction is expected at tiny apertures (e.g., f/22)")
     void shouldIdentifyDiffraction() {
         UnifiedImageAsset asset = createTestAsset(pentaxStarFiftyProfile, 22.0);
+        ImageProcessingContext context = new ImageProcessingContext(asset, null, Optional.empty());
 
-        TriageMetric metric = evaluator.evaluate(asset);
+        TriageMetric metric = evaluator.evaluate(context);
 
         assertEquals("DIFFRACTION_LIMIT", metric.status());
         assertTrue(metric.assessment().contains("Diffraction warning"));
@@ -72,8 +76,9 @@ class LensOptimumZoneEvaluatorTest {
                 new ExposureProfile(100, 1/125.0, Optional.empty(), Optional.of(50.0)),
                 new ImageDimensions(0, 0, 0)
         );
+        ImageProcessingContext context = new ImageProcessingContext(asset, null, Optional.empty());
 
-        TriageMetric metric = evaluator.evaluate(asset);
+        TriageMetric metric = evaluator.evaluate(context);
 
         assertEquals("UNKNOWN", metric.status());
         assertTrue(metric.assessment().contains("Incomplete exposure telemetry"));
