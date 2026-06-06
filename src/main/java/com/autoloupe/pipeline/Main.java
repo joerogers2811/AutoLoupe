@@ -10,6 +10,8 @@ import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.autoloupe.pipeline.extraction.PreviewExtractionStrategyRegistry;
 import com.autoloupe.pipeline.factory.ImageAssetFactoryComposite;
 import com.autoloupe.pipeline.service.IngestEngine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,12 +20,15 @@ import java.util.function.Consumer;
 
 
 public class Main {
+    private static final Logger log = LoggerFactory.getLogger(Main.class);
+
     public static void main(String[] args) throws Exception {
         // Create an ingestion directory path to monitor
         Path autoloupeIngestFolder = Path.of(System.getProperty("user.home"), "triage_ingest");
         if (!Files.exists(autoloupeIngestFolder)) {
             Files.createDirectories(autoloupeIngestFolder);
         }
+        log.info("Initialized ingestion directory at: {}", autoloupeIngestFolder);
 
         // 1. Initialize Stage 3 Evaluation Infrastructure
         AssetEvaluationEngine evaluationEngine = new AssetEvaluationEngine(new NeuralSubjectLocator(Path.of("D:\\OnnxModels\\yolov8n.optimized.onnx")),
