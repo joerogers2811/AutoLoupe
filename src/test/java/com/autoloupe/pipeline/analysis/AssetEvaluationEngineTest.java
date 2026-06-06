@@ -1,6 +1,5 @@
 package com.autoloupe.pipeline.analysis;
 
-import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.autoloupe.pipeline.analysis.domain.EvaluationReport;
 import com.autoloupe.pipeline.analysis.domain.TriageMetric;
@@ -46,7 +45,6 @@ class AssetEvaluationEngineTest {
                 new UnifiedImageAsset.ImageDimensions(6144, 4096, 0)
         );
 
-        evaluationEngine = new AssetEvaluationEngine(List.of(mockEvaluator1, mockEvaluator2));
     }
 
     @Test
@@ -64,10 +62,11 @@ class AssetEvaluationEngineTest {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<EvaluationReport> resultReport = new AtomicReference<>();
 
-        evaluationEngine.registerOutputConsumer(report -> {
-            resultReport.set(report);
-            latch.countDown();
-        });
+        evaluationEngine = new AssetEvaluationEngine(List.of(mockEvaluator1, mockEvaluator2),
+                report -> {
+                    resultReport.set(report);
+                    latch.countDown();
+                });
 
         // Submit the asset (simulating hand-off from Stage 2 IngestEngine)
         evaluationEngine.submitForAnalysis(context);

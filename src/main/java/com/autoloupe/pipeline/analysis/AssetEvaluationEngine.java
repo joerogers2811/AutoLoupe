@@ -1,6 +1,5 @@
 package com.autoloupe.pipeline.analysis;
 
-import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
 import com.autoloupe.pipeline.analysis.domain.EvaluationReport;
 import com.autoloupe.pipeline.analysis.domain.TriageMetric;
 import org.slf4j.Logger;
@@ -18,18 +17,13 @@ public class AssetEvaluationEngine implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(AssetEvaluationEngine.class);
     private final List<AssetEvaluator> evaluators;
     private final ExecutorService evaluationWorkerPool;
-    private Consumer<EvaluationReport> outputConsumer;
+    private final Consumer<EvaluationReport> outputConsumer;
 
-    public AssetEvaluationEngine(List<AssetEvaluator> evaluators) {
+    public AssetEvaluationEngine(List<AssetEvaluator> evaluators, Consumer<EvaluationReport> consumer) {
         this.evaluators = List.copyOf(evaluators);
         // Spin up an unbounded execution plane for async analysis tasks
         this.evaluationWorkerPool = Executors.newVirtualThreadPerTaskExecutor();
         // Default to a logging line until the user wires up a real dashboard/database
-        this.outputConsumer = report -> log.info("[Analysis Complete] Asset ID: {} generated {} metrics.",
-                report.assetId(), report.metrics().size());
-    }
-
-    public void registerOutputConsumer(Consumer<EvaluationReport> consumer) {
         this.outputConsumer = consumer;
     }
 
