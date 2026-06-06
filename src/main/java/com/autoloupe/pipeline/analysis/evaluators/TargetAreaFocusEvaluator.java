@@ -1,7 +1,7 @@
 package com.autoloupe.pipeline.analysis.evaluators;
 
 import com.autoloupe.pipeline.analysis.AssetEvaluator;
-import com.autoloupe.pipeline.analysis.ImageProcessingContext;
+import com.autoloupe.pipeline.analysis.domain.ImageProcessingContext;
 import com.autoloupe.pipeline.analysis.domain.TriageMetric;
 
 import java.awt.*;

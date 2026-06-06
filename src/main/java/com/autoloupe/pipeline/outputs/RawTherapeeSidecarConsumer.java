@@ -1,4 +1,4 @@
-package com.autoloupe.pipeline.analysis.outputs;
+package com.autoloupe.pipeline.outputs;
 
 import com.autoloupe.pipeline.analysis.domain.EvaluationReport;
 import com.autoloupe.pipeline.analysis.domain.TriageMetric;

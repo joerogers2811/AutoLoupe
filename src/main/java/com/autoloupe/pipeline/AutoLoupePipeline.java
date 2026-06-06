@@ -5,9 +5,9 @@ import com.autoloupe.pipeline.analysis.AssetEvaluationEngine;
 import com.autoloupe.pipeline.analysis.evaluators.LensOptimumZoneEvaluator;
 import com.autoloupe.pipeline.analysis.evaluators.TargetAreaFocusEvaluator;
 import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
-import com.autoloupe.pipeline.analysis.outputs.RawTherapeeSidecarConsumer;
-import com.autoloupe.pipeline.extraction.PreviewExtractionStrategyRegistry;
-import com.autoloupe.pipeline.factory.ImageAssetFactoryComposite;
+import com.autoloupe.pipeline.outputs.RawTherapeeSidecarConsumer;
+import com.autoloupe.pipeline.ingest.extraction.PreviewExtractionStrategyRegistry;
+import com.autoloupe.pipeline.ingest.factory.ImageAssetFactoryComposite;
 import com.autoloupe.pipeline.service.IngestEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +36,7 @@ public class AutoLoupePipeline implements AutoCloseable {
         // 1. Initialize Stage 3 Evaluation Infrastructure
         this.evaluationEngine = new AssetEvaluationEngine(
                 List.of(new LensOptimumZoneEvaluator(), new TargetAreaFocusEvaluator()),
+                new NeuralSubjectLocator(yoloModelPath),
                 new RawTherapeeSidecarConsumer()
         );
 
@@ -44,8 +45,7 @@ public class AutoLoupePipeline implements AutoCloseable {
                 ingestFolder,
                 new ImageAssetFactoryComposite(),
                 evaluationEngine::submitForAnalysis,
-                new PreviewExtractionStrategyRegistry(),
-                new NeuralSubjectLocator(yoloModelPath)
+                new PreviewExtractionStrategyRegistry()
         );
     }
 

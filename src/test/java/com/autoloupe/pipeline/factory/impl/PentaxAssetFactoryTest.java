@@ -1,5 +1,6 @@
 package com.autoloupe.pipeline.factory.impl;
 
+import com.autoloupe.pipeline.ingest.factory.impl.PentaxAssetFactory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;

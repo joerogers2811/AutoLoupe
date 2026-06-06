@@ -1,5 +1,8 @@
 package com.autoloupe.pipeline.analysis;
 
+import com.autoloupe.pipeline.analysis.domain.ImageProcessingContext;
+import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
+import com.autoloupe.pipeline.domain.AnalysisTransaction;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.autoloupe.pipeline.analysis.domain.EvaluationReport;
 import com.autoloupe.pipeline.analysis.domain.TriageMetric;
@@ -30,6 +33,8 @@ class AssetEvaluationEngineTest {
     @Mock private AssetEvaluator mockEvaluator1;
     @Mock private AssetEvaluator mockEvaluator2;
 
+    @Mock private NeuralSubjectLocator mockLocator;
+
     private UnifiedImageAsset stubAsset;
 
     @BeforeEach
@@ -53,16 +58,18 @@ class AssetEvaluationEngineTest {
         TriageMetric metric1 = new TriageMetric("Rule1", "PASS", "Details 1");
         TriageMetric metric2 = new TriageMetric("Rule2", "WARN", "Details 2");
 
-        ImageProcessingContext context = new ImageProcessingContext(stubAsset, null, Optional.empty());
+        AnalysisTransaction context = new AnalysisTransaction(stubAsset, null);
 
-        when(mockEvaluator1.evaluate(context)).thenReturn(metric1);
-        when(mockEvaluator2.evaluate(context)).thenReturn(metric2);
+        when(mockEvaluator1.evaluate(any(ImageProcessingContext.class))).thenReturn(metric1);
+        when(mockEvaluator2.evaluate(any(ImageProcessingContext.class))).thenReturn(metric2);
 
         // Track asynchronous output from the engine using a latch
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<EvaluationReport> resultReport = new AtomicReference<>();
 
-        evaluationEngine = new AssetEvaluationEngine(List.of(mockEvaluator1, mockEvaluator2),
+        evaluationEngine = new AssetEvaluationEngine(
+                List.of(mockEvaluator1, mockEvaluator2),
+                mockLocator,
                 report -> {
                     resultReport.set(report);
                     latch.countDown();

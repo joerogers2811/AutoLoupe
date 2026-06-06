@@ -1,7 +1,7 @@
-package com.autoloupe.pipeline.factory.impl;
+package com.autoloupe.pipeline.ingest.factory.impl;
 
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
-import com.autoloupe.pipeline.factory.ImageAssetFactory;
+import com.autoloupe.pipeline.ingest.factory.ImageAssetFactory;
 import com.drew.metadata.Metadata;
 import java.nio.file.Path;
 

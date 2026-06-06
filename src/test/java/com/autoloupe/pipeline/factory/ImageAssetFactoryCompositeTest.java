@@ -1,5 +1,6 @@
 package com.autoloupe.pipeline.factory;
 
+import com.autoloupe.pipeline.ingest.factory.ImageAssetFactoryComposite;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import org.junit.jupiter.api.Test;

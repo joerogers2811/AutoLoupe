@@ -1,6 +1,7 @@
-package com.autoloupe.pipeline.analysis;
+package com.autoloupe.pipeline.analysis.domain;
 
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
+
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package com.autoloupe.pipeline.extraction;
+package com.autoloupe.pipeline.ingest.extraction;
 
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.drew.metadata.Metadata;

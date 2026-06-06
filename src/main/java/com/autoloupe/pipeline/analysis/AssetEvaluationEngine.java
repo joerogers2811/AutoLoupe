@@ -2,9 +2,13 @@ package com.autoloupe.pipeline.analysis;
 
 import com.autoloupe.pipeline.analysis.domain.EvaluationReport;
 import com.autoloupe.pipeline.analysis.domain.TriageMetric;
+import com.autoloupe.pipeline.analysis.domain.ImageProcessingContext;
+import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
+import com.autoloupe.pipeline.domain.AnalysisTransaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.awt.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,11 +20,13 @@ public class AssetEvaluationEngine implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(AssetEvaluationEngine.class);
     private final List<AssetEvaluator> evaluators;
+    private final NeuralSubjectLocator locatorService;
     private final ExecutorService evaluationWorkerPool;
     private final Consumer<EvaluationReport> outputConsumer;
 
-    public AssetEvaluationEngine(List<AssetEvaluator> evaluators, Consumer<EvaluationReport> consumer) {
+    public AssetEvaluationEngine(List<AssetEvaluator> evaluators, NeuralSubjectLocator locatorService, Consumer<EvaluationReport> consumer) {
         this.evaluators = List.copyOf(evaluators);
+        this.locatorService = locatorService;
         // Spin up an unbounded execution plane for async analysis tasks
         this.evaluationWorkerPool = Executors.newVirtualThreadPerTaskExecutor();
         // Default to a logging line until the user wires up a real dashboard/database
@@ -31,19 +37,22 @@ public class AssetEvaluationEngine implements AutoCloseable {
      * Entry point for Stage 2 hand-off. Dispatches an isolated virtual thread
      * task to compile analysis reports without blocking ingestion.
      */
-    public void submitForAnalysis(ImageProcessingContext context) {
+    public void submitForAnalysis(AnalysisTransaction transaction) {
         evaluationWorkerPool.submit(() -> {
-            log.debug("Beginning evaluation pipeline execution for asset: {}", context.asset().id());
+            log.debug("Beginning evaluation pipeline execution for asset: {}", transaction.asset().id());
+
+            ImageProcessingContext context = new ImageProcessingContext(
+                    transaction.asset(),
+                    transaction.previewFrame(),
+                    locatorService.detectPrimarySubject(transaction.previewFrame()));
+
             List<TriageMetric> compiledMetrics = new ArrayList<>();
-
-
-
             for (AssetEvaluator evaluator : evaluators) {
                 try {
                     TriageMetric metric = evaluator.evaluate(context);
                     compiledMetrics.add(metric);
                 } catch (Exception e) {
-                    log.error("Evaluator failure executing rule mapping on asset {}: {}", context.asset().id(), e.getMessage(), e);
+                    log.error("Evaluator failure executing rule mapping on asset {}: {}", transaction.asset().id(), e.getMessage(), e);
                     compiledMetrics.add(new TriageMetric(
                             evaluator.getClass().getSimpleName(),
                             "ERROR",
@@ -53,8 +62,8 @@ public class AssetEvaluationEngine implements AutoCloseable {
             }
 
             EvaluationReport report = new EvaluationReport(
-                    context.asset().id(),
-                    context.asset().rawFilePath(),
+                    transaction.asset().id(),
+                    transaction.asset().rawFilePath(),
                     Instant.now(),
                     List.copyOf(compiledMetrics)
             );

@@ -1,8 +1,8 @@
-package com.autoloupe.pipeline.factory;
+package com.autoloupe.pipeline.ingest.factory;
 
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
-import com.autoloupe.pipeline.factory.impl.PentaxAssetFactory;
-import com.autoloupe.pipeline.factory.impl.StandardFallbackAssetFactory;
+import com.autoloupe.pipeline.ingest.factory.impl.PentaxAssetFactory;
+import com.autoloupe.pipeline.ingest.factory.impl.StandardFallbackAssetFactory;
 import com.drew.metadata.Metadata;
 
 import java.nio.file.Path;

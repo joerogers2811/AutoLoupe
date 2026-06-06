@@ -1,17 +1,11 @@
-package com.autoloupe.pipeline.extraction;
+package com.autoloupe.pipeline.ingest.extraction;
 
-import com.autoloupe.pipeline.analysis.ImageProcessingContext;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
-import com.autoloupe.pipeline.factory.ImageAssetFactory;
-import com.autoloupe.pipeline.factory.impl.PentaxAssetFactory;
-import com.autoloupe.pipeline.factory.impl.StandardFallbackAssetFactory;
 import com.drew.metadata.Metadata;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 
 public class PreviewExtractionStrategyRegistry {
 

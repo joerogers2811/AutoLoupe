@@ -1,21 +1,17 @@
 package com.autoloupe.pipeline.analysis.neural;
 
 import ai.onnxruntime.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.imageio.ImageIO;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Locates the primary subject in an image using a YOLOv8n ONNX model.
@@ -27,6 +23,7 @@ public class NeuralSubjectLocator implements AutoCloseable {
     private static final int MODEL_HEIGHT = 640;
     private static final float CONFIDENCE_THRESHOLD = 0.35f;
     private static final float IOU_THRESHOLD = 0.45f;
+    private static final Logger log = LoggerFactory.getLogger(NeuralSubjectLocator.class);
 
     private final OrtEnvironment env;
     private final OrtSession session;
@@ -41,7 +38,7 @@ public class NeuralSubjectLocator implements AutoCloseable {
     /**
      * Interrogates the neural network to find the most prominent object bounding box.
      */
-    public Rectangle detectPrimarySubject(BufferedImage src) throws OrtException {
+    public Optional<Rectangle> detectPrimarySubject(BufferedImage src) {
         Letterbox letterbox = letterbox(src, MODEL_WIDTH, MODEL_HEIGHT);
         FloatBuffer inputBuffer = convertImageToFloatBuffer(letterbox.image());
         long[] inputShape = new long[]{1, 3, MODEL_HEIGHT, MODEL_WIDTH};
@@ -53,15 +50,18 @@ public class NeuralSubjectLocator implements AutoCloseable {
                 Object outputValue = output.get(0).getValue();
                 float[][] predictions = unwrapYoloOutput(outputValue);
 
-                return parseTopBoundingBox(
+                return Optional.of(parseTopBoundingBox(
                         predictions,
                         src.getWidth(),
                         src.getHeight(),
                         letterbox.scale(),
                         letterbox.padX(),
                         letterbox.padY()
-                );
+                ));
             }
+        } catch (OrtException ex) {
+            log.error("Error during neural subject detection: {}", ex.getMessage(), ex);
+            return Optional.empty();
         }
     }
 

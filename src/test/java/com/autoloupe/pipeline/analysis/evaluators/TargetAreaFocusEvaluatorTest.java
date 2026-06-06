@@ -1,6 +1,6 @@
 package com.autoloupe.pipeline.analysis.evaluators;
 
-import com.autoloupe.pipeline.analysis.ImageProcessingContext;
+import com.autoloupe.pipeline.analysis.domain.ImageProcessingContext;
 import com.autoloupe.pipeline.analysis.domain.TriageMetric;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
