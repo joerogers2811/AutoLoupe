@@ -28,7 +28,6 @@ class AssetEvaluationEngineTest {
 
     private AssetEvaluationEngine evaluationEngine;
 
-    @Mock private NeuralSubjectLocator mockLocator;
     @Mock private AssetEvaluator mockEvaluator1;
     @Mock private AssetEvaluator mockEvaluator2;
 
@@ -47,7 +46,7 @@ class AssetEvaluationEngineTest {
                 new UnifiedImageAsset.ImageDimensions(6144, 4096, 0)
         );
 
-        evaluationEngine = new AssetEvaluationEngine(mockLocator, List.of(mockEvaluator1, mockEvaluator2));
+        evaluationEngine = new AssetEvaluationEngine(List.of(mockEvaluator1, mockEvaluator2));
     }
 
     @Test

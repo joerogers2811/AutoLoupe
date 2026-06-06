@@ -16,13 +16,11 @@ import java.util.function.Consumer;
 public class AssetEvaluationEngine implements AutoCloseable {
 
     private static final Logger log = LoggerFactory.getLogger(AssetEvaluationEngine.class);
-    private final NeuralSubjectLocator locator;
     private final List<AssetEvaluator> evaluators;
     private final ExecutorService evaluationWorkerPool;
     private Consumer<EvaluationReport> outputConsumer;
 
-    public AssetEvaluationEngine(NeuralSubjectLocator locator, List<AssetEvaluator> evaluators) {
-        this.locator = locator;
+    public AssetEvaluationEngine(List<AssetEvaluator> evaluators) {
         this.evaluators = List.copyOf(evaluators);
         // Spin up an unbounded execution plane for async analysis tasks
         this.evaluationWorkerPool = Executors.newVirtualThreadPerTaskExecutor();

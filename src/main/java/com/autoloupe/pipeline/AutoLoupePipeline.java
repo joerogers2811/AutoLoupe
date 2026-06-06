@@ -35,7 +35,6 @@ public class AutoLoupePipeline implements AutoCloseable {
 
         // 1. Initialize Stage 3 Evaluation Infrastructure
         this.evaluationEngine = new AssetEvaluationEngine(
-                new NeuralSubjectLocator(yoloModelPath),
                 List.of(new LensOptimumZoneEvaluator(), new TargetAreaFocusEvaluator())
         );
         this.evaluationEngine.registerOutputConsumer(new RawTherapeeSidecarConsumer());
