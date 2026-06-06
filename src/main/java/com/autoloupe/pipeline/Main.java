@@ -8,7 +8,6 @@ import com.autoloupe.pipeline.analysis.evaluators.TargetAreaFocusEvaluator;
 import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.autoloupe.pipeline.extraction.PreviewExtractionStrategyRegistry;
-import com.autoloupe.pipeline.service.PreviewImageExtractor;
 import com.autoloupe.pipeline.factory.ImageAssetFactoryComposite;
 import com.autoloupe.pipeline.service.IngestEngine;
 

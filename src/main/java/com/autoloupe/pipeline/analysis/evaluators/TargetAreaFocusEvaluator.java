@@ -3,13 +3,9 @@ package com.autoloupe.pipeline.analysis.evaluators;
 import com.autoloupe.pipeline.analysis.AssetEvaluator;
 import com.autoloupe.pipeline.analysis.ImageProcessingContext;
 import com.autoloupe.pipeline.analysis.domain.TriageMetric;
-import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 
 public class TargetAreaFocusEvaluator implements AssetEvaluator {
 

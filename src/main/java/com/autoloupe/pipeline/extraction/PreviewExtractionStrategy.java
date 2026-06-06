@@ -3,8 +3,6 @@ package com.autoloupe.pipeline.extraction;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.drew.metadata.Metadata;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.util.Optional;
 
 public interface PreviewExtractionStrategy {
     /**
