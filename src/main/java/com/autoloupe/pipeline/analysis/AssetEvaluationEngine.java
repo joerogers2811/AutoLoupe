@@ -1,7 +1,6 @@
 package com.autoloupe.pipeline.analysis;
 
 import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
-import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.autoloupe.pipeline.analysis.domain.EvaluationReport;
 import com.autoloupe.pipeline.analysis.domain.TriageMetric;
 import org.slf4j.Logger;
@@ -63,6 +62,7 @@ public class AssetEvaluationEngine implements AutoCloseable {
 
             EvaluationReport report = new EvaluationReport(
                     context.asset().id(),
+                    context.asset().rawFilePath(),
                     Instant.now(),
                     List.copyOf(compiledMetrics)
             );

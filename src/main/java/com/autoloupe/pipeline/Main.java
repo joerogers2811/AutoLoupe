@@ -5,6 +5,7 @@ import com.autoloupe.pipeline.analysis.AssetEvaluationEngine;
 import com.autoloupe.pipeline.analysis.ImageProcessingContext;
 import com.autoloupe.pipeline.analysis.evaluators.LensOptimumZoneEvaluator;
 import com.autoloupe.pipeline.analysis.evaluators.TargetAreaFocusEvaluator;
+import com.autoloupe.pipeline.analysis.outputs.RawTherapeeSidecarConsumer;
 import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.autoloupe.pipeline.extraction.PreviewExtractionStrategyRegistry;
@@ -33,6 +34,7 @@ public class Main {
         // 1. Initialize Stage 3 Evaluation Infrastructure
         AssetEvaluationEngine evaluationEngine = new AssetEvaluationEngine(new NeuralSubjectLocator(Path.of("D:\\OnnxModels\\yolov8n.optimized.onnx")),
                 List.of(new LensOptimumZoneEvaluator(), new TargetAreaFocusEvaluator()));
+        evaluationEngine.registerOutputConsumer(new RawTherapeeSidecarConsumer());
 
         PreviewExtractionStrategyRegistry extractionStrategyRegistry = new PreviewExtractionStrategyRegistry();
 
