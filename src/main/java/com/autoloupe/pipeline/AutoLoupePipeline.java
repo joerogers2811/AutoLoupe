@@ -8,7 +8,7 @@ import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
 import com.autoloupe.pipeline.outputs.RawTherapeeSidecarConsumer;
 import com.autoloupe.pipeline.ingest.extraction.PreviewExtractionStrategyRegistry;
 import com.autoloupe.pipeline.ingest.factory.ImageAssetFactoryComposite;
-import com.autoloupe.pipeline.service.IngestEngine;
+import com.autoloupe.pipeline.ingest.IngestEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

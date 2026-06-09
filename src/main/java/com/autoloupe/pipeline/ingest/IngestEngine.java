@@ -1,15 +1,15 @@
-package com.autoloupe.pipeline.service;
+package com.autoloupe.pipeline.ingest;
 
 import com.autoloupe.pipeline.domain.AnalysisTransaction;
 import com.autoloupe.pipeline.ingest.extraction.PreviewExtractionStrategyRegistry;
 import com.autoloupe.pipeline.ingest.factory.ImageAssetFactoryComposite;
+import com.autoloupe.pipeline.service.QuarantineHandler;
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.metadata.Metadata;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
