@@ -38,7 +38,7 @@ public class NeuralSubjectLocator implements AutoCloseable {
     private final OrtSession session;
     private final Path temporaryModelFile;
 
-    public NeuralSubjectLocator(Path modelPath) throws OrtException {
+    public NeuralSubjectLocator() throws OrtException {
         try (SessionOptions options = new SessionOptions()) {
             options.setOptimizationLevel(SessionOptions.OptLevel.ALL_OPT);
         }

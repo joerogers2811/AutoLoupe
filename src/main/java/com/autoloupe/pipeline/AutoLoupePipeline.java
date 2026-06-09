@@ -27,7 +27,11 @@ public class AutoLoupePipeline implements AutoCloseable {
     private final AssetEvaluationEngine evaluationEngine;
     private final IngestEngine ingestEngine;
 
-    public AutoLoupePipeline(Path ingestFolder, Path yoloModelPath) throws IOException, OrtException {
+    public AutoLoupePipeline(Path ingestFolder) throws IOException, OrtException {
+        this(ingestFolder, false);
+    }
+
+    public AutoLoupePipeline(Path ingestFolder, boolean oneShotMode) throws IOException, OrtException {
         this.ingestFolder = ingestFolder;
         ensureIngestFolderExists();
 
@@ -36,7 +40,7 @@ public class AutoLoupePipeline implements AutoCloseable {
         // 1. Initialize Stage 3 Evaluation Infrastructure
         this.evaluationEngine = new AssetEvaluationEngine(
                 List.of(new LensOptimumZoneEvaluator(), new TargetAreaFocusEvaluator()),
-                new NeuralSubjectLocator(yoloModelPath),
+                new NeuralSubjectLocator(),
                 new XmpSidecarConsumer()
         );
 
@@ -45,7 +49,8 @@ public class AutoLoupePipeline implements AutoCloseable {
                 ingestFolder,
                 new ImageAssetFactoryComposite(),
                 evaluationEngine::submitForAnalysis,
-                new PreviewExtractionStrategyRegistry()
+                new PreviewExtractionStrategyRegistry(),
+                oneShotMode
         );
     }
 
@@ -57,10 +62,20 @@ public class AutoLoupePipeline implements AutoCloseable {
     }
 
     public void start() {
-        log.info("Pipeline starting. Monitoring: {}", ingestFolder.toAbsolutePath());
-        Thread.ofPlatform()
+        log.info("Pipeline starting. Mode: {}", ingestEngine.isOneShot() ? "One-shot" : "Persistent");
+        
+        Thread hostThread = Thread.ofPlatform()
                 .name("IngestEngine-Host")
                 .start(ingestEngine);
+
+        if (ingestEngine.isOneShot()) {
+            try {
+                hostThread.join();
+            } catch (InterruptedException e) {
+                log.warn("One-shot host thread interrupted: {}", e.getMessage());
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     @Override

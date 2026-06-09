@@ -31,6 +31,7 @@ public class IngestEngine implements Runnable, AutoCloseable {
     private final PreviewExtractionStrategyRegistry extractionStrategies;
     private final QuarantineHandler quarantineHandler;
     private final ExecutorService ioWorkerPool;
+    private final boolean oneShotMode;
 
     // Limits concurrent extraction to protect memory when processing 50MB+ full-frame files
     private final Semaphore ioPermitGate;
@@ -41,20 +42,59 @@ public class IngestEngine implements Runnable, AutoCloseable {
             Consumer<AnalysisTransaction> downstreamPipeline,
             PreviewExtractionStrategyRegistry extractionStrategies
     ) {
+        this(ingestDirectory, factoryRegistry, downstreamPipeline, extractionStrategies, false);
+    }
+
+    public IngestEngine(
+            Path ingestDirectory,
+            ImageAssetFactoryComposite factoryRegistry,
+            Consumer<AnalysisTransaction> downstreamPipeline,
+            PreviewExtractionStrategyRegistry extractionStrategies,
+            boolean oneShotMode
+    ) {
+        this(ingestDirectory, factoryRegistry, downstreamPipeline, extractionStrategies, oneShotMode, new QuarantineHandler());
+    }
+
+    public IngestEngine(
+            Path ingestDirectory,
+            ImageAssetFactoryComposite factoryRegistry,
+            Consumer<AnalysisTransaction> downstreamPipeline,
+            PreviewExtractionStrategyRegistry extractionStrategies,
+            boolean oneShotMode,
+            QuarantineHandler quarantineHandler
+    ) {
         this.ingestDirectory = ingestDirectory;
         this.factoryRegistry = factoryRegistry;
         this.downstreamPipeline = downstreamPipeline;
         this.extractionStrategies = extractionStrategies;
-        this.quarantineHandler = new QuarantineHandler(); // Default timings for high-MP raw files
+        this.oneShotMode = oneShotMode;
+        this.quarantineHandler = quarantineHandler;
         this.ioWorkerPool = Executors.newVirtualThreadPerTaskExecutor();
         this.ioPermitGate = new Semaphore(4); // Up to 4 massive images actively parsed at any millisecond
     }
 
     @Override
     public void run() {
+        log.info("[Auto Loupe] Stage 2 Ingest Engine active. Scanning path: {}", ingestDirectory.toAbsolutePath());
+
+        // Initial scan of existing files
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(ingestDirectory)) {
+            for (Path entry : stream) {
+                if (Files.isRegularFile(entry)) {
+                    processFileIfEligible(entry);
+                }
+            }
+        } catch (IOException e) {
+            log.error("Failed to perform initial directory scan: {}", e.getMessage());
+        }
+
+        if (oneShotMode) {
+            log.info("[Auto Loupe] One-shot scan complete. Ingest Engine shutting down.");
+            return;
+        }
+
         try (WatchService watchService = FileSystems.getDefault().newWatchService()) {
             ingestDirectory.register(watchService, StandardWatchEventKinds.ENTRY_CREATE);
-            log.info("[Auto Loupe] Stage 2 Ingest Engine active. Scanning path: {}", ingestDirectory.toAbsolutePath());
 
             while (!Thread.currentThread().isInterrupted()) {
                 WatchKey key = watchService.take();
@@ -64,12 +104,7 @@ public class IngestEngine implements Runnable, AutoCloseable {
                     Path fileContext = (Path) event.context();
                     Path fullTarget = ingestDirectory.resolve(fileContext);
 
-                    String filename = fullTarget.getFileName().toString().toLowerCase();
-                    // Ignore transient/hidden files from OS and card transfers
-                    if (filename.startsWith(".") || filename.endsWith(".tmp")) continue;
-
-                    // Instantly hand off to Project Loom to preserve filesystem event reactivity
-                    ioWorkerPool.submit(() -> secureAndProcessAsset(fullTarget));
+                    processFileIfEligible(fullTarget);
                 }
                 if (!key.reset()) break;
             }
@@ -77,6 +112,15 @@ public class IngestEngine implements Runnable, AutoCloseable {
             log.error("Ingest Engine loop interrupted: {}", e.getMessage());
             Thread.currentThread().interrupt();
         }
+    }
+
+    private void processFileIfEligible(Path filePath) {
+        String filename = filePath.getFileName().toString().toLowerCase();
+        // Ignore transient/hidden files from OS and card transfers
+        if (filename.startsWith(".") || filename.endsWith(".tmp")) return;
+
+        // Instantly hand off to Project Loom to preserve filesystem event reactivity
+        ioWorkerPool.submit(() -> secureAndProcessAsset(filePath));
     }
 
     private void secureAndProcessAsset(Path targetPath) {
@@ -129,5 +173,9 @@ public class IngestEngine implements Runnable, AutoCloseable {
     public void close() {
         log.info("[Auto Loupe] Shutting down Ingest Engine work pools...");
         ioWorkerPool.close(); // Cleanly flushes active Project Loom execution contexts
+    }
+
+    public boolean isOneShot() {
+        return oneShotMode;
     }
 }

@@ -84,6 +84,6 @@ public class AssetEvaluationEngine implements AutoCloseable {
     @Override
     public void close() {
         log.info("[Auto Loupe] Winding down Stage 3 analysis workers...");
-        evaluationWorkerPool.shutdown();
+        evaluationWorkerPool.close(); // Use close() instead of shutdown() to wait for termination
     }
 }
