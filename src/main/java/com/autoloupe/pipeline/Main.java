@@ -1,8 +1,11 @@
 package com.autoloupe.pipeline;
 
+import com.autoloupe.pipeline.exception.ModelInitialisationException;
+import ai.onnxruntime.OrtException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 public class Main {
@@ -26,7 +29,13 @@ public class Main {
         } catch (InterruptedException e) {
             log.warn("Application interrupted: {}", e.getMessage());
             Thread.currentThread().interrupt();
-        } catch (Exception e) {
+        } catch (ModelInitialisationException | OrtException e) {
+            log.error("Failed to initialize Neural Network model: {}", e.getMessage());
+            System.exit(1);
+        } catch (IOException e) {
+            log.error("IO failure during pipeline startup: {}", e.getMessage());
+            System.exit(1);
+        } catch (RuntimeException e) {
             log.error("Critical failure in AutoLoupe Pipeline: {}", e.getMessage(), e);
             System.exit(1);
         }

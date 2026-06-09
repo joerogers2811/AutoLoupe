@@ -1,6 +1,7 @@
 package com.autoloupe.pipeline.analysis.neural;
 
 import ai.onnxruntime.*;
+import com.autoloupe.pipeline.exception.ModelInitialisationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,15 +10,23 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.FloatBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
+
+import static ai.onnxruntime.OrtSession.*;
 
 /**
  * Locates the primary subject in an image using a YOLOv8n ONNX model.
  * Post-processing is tuned for standard YOLOv8 export (1x84x8400 output tensor).
  */
 public class NeuralSubjectLocator implements AutoCloseable {
+
+    private static final String EMBEDDED_MODEL_RESOURCE = "/models/yolov8n.onnx";
 
     private static final int MODEL_WIDTH = 640;
     private static final int MODEL_HEIGHT = 640;
@@ -27,12 +36,47 @@ public class NeuralSubjectLocator implements AutoCloseable {
 
     private final OrtEnvironment env;
     private final OrtSession session;
+    private final Path temporaryModelFile;
 
     public NeuralSubjectLocator(Path modelPath) throws OrtException {
-        this.env = OrtEnvironment.getEnvironment();
-        OrtSession.SessionOptions options = new OrtSession.SessionOptions();
-        options.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT);
-        this.session = env.createSession(modelPath.toString(), options);
+        try (SessionOptions options = new SessionOptions()) {
+            options.setOptimizationLevel(SessionOptions.OptLevel.ALL_OPT);
+        }
+            this.env = OrtEnvironment.getEnvironment();
+
+        // 1. Resolve resource stream
+        try (InputStream modelStream = getClass().getResourceAsStream(EMBEDDED_MODEL_RESOURCE)) {
+            if (modelStream == null) {
+                throw new ModelInitialisationException("Embedded neural model asset missing from classpath: " + EMBEDDED_MODEL_RESOURCE);
+            }
+
+            // 2. Allocate temporary disk space
+            try {
+                this.temporaryModelFile = Files.createTempFile("autoloupe-yolo-", ".onnx");
+                this.temporaryModelFile.toFile().deleteOnExit();
+            } catch (IOException e) {
+                throw new ModelInitialisationException("Failed to provision temporary system file space for model execution", e);
+            }
+
+            log.info("Extracting internal zero-config weights to transient layer: {}", temporaryModelFile.toAbsolutePath());
+
+            // 3. Extract the bytes
+            try {
+                Files.copy(modelStream, temporaryModelFile, StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                throw new ModelInitialisationException("Failed to stream embedded model bytes to temporary storage location", e);
+            }
+
+            // 4. Spin up the native session
+            try {
+                this.session = env.createSession(temporaryModelFile.toAbsolutePath().toString());
+            } catch (OrtException e) {
+                throw new ModelInitialisationException("ONNX Runtime engine rejected the model structure or weights configuration", e);
+            }
+
+        } catch (IOException e) {
+            throw new ModelInitialisationException("Fatal exception encountered while closing internal model resource stream", e);
+        }
     }
 
     /**
@@ -46,7 +90,7 @@ public class NeuralSubjectLocator implements AutoCloseable {
         try (OnnxTensor inputTensor = OnnxTensor.createTensor(env, inputBuffer, inputShape)) {
             String inputName = session.getInputNames().iterator().next();
 
-            try (OrtSession.Result output = session.run(Collections.singletonMap(inputName, inputTensor))) {
+            try (Result output = session.run(Collections.singletonMap(inputName, inputTensor))) {
                 Object outputValue = output.get(0).getValue();
                 float[][] predictions = unwrapYoloOutput(outputValue);
 

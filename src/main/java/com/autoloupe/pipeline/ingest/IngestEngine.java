@@ -4,7 +4,9 @@ import com.autoloupe.pipeline.domain.AnalysisTransaction;
 import com.autoloupe.pipeline.ingest.extraction.PreviewExtractionStrategyRegistry;
 import com.autoloupe.pipeline.ingest.factory.ImageAssetFactoryComposite;
 import com.autoloupe.pipeline.service.QuarantineHandler;
+import com.autoloupe.pipeline.exception.AssetParsingException;
 import com.drew.imaging.ImageMetadataReader;
+import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Metadata;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import org.slf4j.Logger;
@@ -116,8 +118,10 @@ public class IngestEngine implements Runnable, AutoCloseable {
         } catch (InterruptedException e) {
             log.error("Ingest thread interrupted while processing asset [{}]: {}", targetPath, e.getMessage());
             Thread.currentThread().interrupt();
-        } catch (Exception e) {
-            log.error("Failed parsing raw target asset [{}]: {}", targetPath, e.getMessage(), e);
+        } catch (ImageProcessingException | IOException | AssetParsingException e) {
+            log.error("Failed parsing raw target asset [{}]: {}", targetPath, e.getMessage());
+        } catch (RuntimeException e) {
+            log.error("Unexpected runtime error processing asset [{}]: {}", targetPath, e.getMessage(), e);
         }
     }
 

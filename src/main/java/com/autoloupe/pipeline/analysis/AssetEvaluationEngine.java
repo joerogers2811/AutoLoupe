@@ -5,6 +5,7 @@ import com.autoloupe.pipeline.analysis.domain.TriageMetric;
 import com.autoloupe.pipeline.analysis.domain.ImageProcessingContext;
 import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
 import com.autoloupe.pipeline.domain.AnalysisTransaction;
+import com.autoloupe.pipeline.exception.EvaluatorProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,12 +52,20 @@ public class AssetEvaluationEngine implements AutoCloseable {
                 try {
                     TriageMetric metric = evaluator.evaluate(context);
                     compiledMetrics.add(metric);
-                } catch (Exception e) {
-                    log.error("Evaluator failure executing rule mapping on asset {}: {}", transaction.asset().id(), e.getMessage(), e);
+                } catch (EvaluatorProcessingException e) {
+                    log.error("Evaluator failure executing rule mapping on asset {}: {}", transaction.asset().id(), e.getMessage());
                     compiledMetrics.add(new TriageMetric(
                             evaluator.getClass().getSimpleName(),
                             "ERROR",
                             "Internal rule processing failure: " + e.getMessage()
+                    ));
+                } catch (RuntimeException e) {
+                    log.error("Unexpected runtime error in evaluator {} for asset {}: {}", 
+                            evaluator.getClass().getSimpleName(), transaction.asset().id(), e.getMessage(), e);
+                    compiledMetrics.add(new TriageMetric(
+                            evaluator.getClass().getSimpleName(),
+                            "ERROR",
+                            "Critical evaluator failure: " + e.getMessage()
                     ));
                 }
             }

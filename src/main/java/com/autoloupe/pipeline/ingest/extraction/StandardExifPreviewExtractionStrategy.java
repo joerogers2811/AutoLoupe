@@ -1,9 +1,12 @@
 package com.autoloupe.pipeline.ingest.extraction;
 
+import com.autoloupe.pipeline.exception.PreviewExtractionException;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.drew.metadata.Metadata;
+import com.drew.metadata.MetadataException;
 import com.drew.metadata.exif.ExifThumbnailDirectory;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import javax.imageio.ImageIO;
 
 public class StandardExifPreviewExtractionStrategy implements PreviewExtractionStrategy {
@@ -24,8 +27,8 @@ public class StandardExifPreviewExtractionStrategy implements PreviewExtractionS
                         return ImageIO.read(bis);
                     }
                 }
-            } catch (Exception e) {
-                // Suppress and pass through to pipeline downsampling
+            } catch (IOException e) {
+                throw new PreviewExtractionException("Failed to decode standard EXIF thumbnail bytes", e);
             }
         }
         return null;

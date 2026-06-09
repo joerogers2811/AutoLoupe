@@ -1,5 +1,6 @@
 package com.autoloupe.pipeline.ingest.extraction;
 
+import com.autoloupe.pipeline.exception.PreviewExtractionException;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
@@ -132,18 +133,18 @@ public class DngPreviewExtractionStrategy implements PreviewExtractionStrategy {
     private BufferedImage decodeJpeg(byte[] bytes, int offset, int length) {
         try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes, offset, length)) {
             return ImageIO.read(bis);
-        } catch (Exception e) {
+        } catch (IOException e) {
             return null;
         }
     }
 
     private Long getLongSafely(Directory directory, int tagType) {
+        if (!directory.containsTag(tagType)) {
+            return null;
+        }
         try {
-            if (!directory.containsTag(tagType)) {
-                return null;
-            }
             return directory.getLong(tagType);
-        } catch (Exception e) {
+        } catch (com.drew.metadata.MetadataException e) {
             return null;
         }
     }
@@ -163,7 +164,7 @@ public class DngPreviewExtractionStrategy implements PreviewExtractionStrategy {
             }
 
             return ImageIO.read(new ByteArrayInputStream(buffer));
-        } catch (Exception e) {
+        } catch (IOException e) {
             return null;
         }
     }

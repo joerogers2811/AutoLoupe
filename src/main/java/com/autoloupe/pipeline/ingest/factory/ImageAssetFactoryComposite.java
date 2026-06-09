@@ -1,5 +1,6 @@
 package com.autoloupe.pipeline.ingest.factory;
 
+import com.autoloupe.pipeline.exception.AssetParsingException;
 import com.autoloupe.pipeline.domain.UnifiedImageAsset;
 import com.autoloupe.pipeline.ingest.factory.impl.PentaxAssetFactory;
 import com.autoloupe.pipeline.ingest.factory.impl.StandardFallbackAssetFactory;
@@ -25,6 +26,6 @@ public class ImageAssetFactoryComposite {
                 .filter(factory -> factory.supports(metadata))
                 .findFirst()
                 .map(factory -> factory.build(filePath, metadata))
-                .orElseThrow(() -> new IllegalStateException("No suitable factory found for " + filePath));
+                .orElseThrow(() -> new AssetParsingException("No suitable factory found for " + filePath));
     }
 }

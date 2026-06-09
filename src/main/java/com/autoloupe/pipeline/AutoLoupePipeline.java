@@ -5,7 +5,7 @@ import com.autoloupe.pipeline.analysis.AssetEvaluationEngine;
 import com.autoloupe.pipeline.analysis.evaluators.LensOptimumZoneEvaluator;
 import com.autoloupe.pipeline.analysis.evaluators.TargetAreaFocusEvaluator;
 import com.autoloupe.pipeline.analysis.neural.NeuralSubjectLocator;
-import com.autoloupe.pipeline.outputs.RawTherapeeSidecarConsumer;
+import com.autoloupe.pipeline.outputs.XmpSidecarConsumer;
 import com.autoloupe.pipeline.ingest.extraction.PreviewExtractionStrategyRegistry;
 import com.autoloupe.pipeline.ingest.factory.ImageAssetFactoryComposite;
 import com.autoloupe.pipeline.ingest.IngestEngine;
@@ -37,7 +37,7 @@ public class AutoLoupePipeline implements AutoCloseable {
         this.evaluationEngine = new AssetEvaluationEngine(
                 List.of(new LensOptimumZoneEvaluator(), new TargetAreaFocusEvaluator()),
                 new NeuralSubjectLocator(yoloModelPath),
-                new RawTherapeeSidecarConsumer()
+                new XmpSidecarConsumer()
         );
 
         // 2. Instantiate IngestEngine and wire to Stage 3
