@@ -1,6 +1,7 @@
 plugins {
     java
     application
+    id("com.gradleup.shadow") version "8.3.5"
 }
 
 group = "com.autoloupe"
@@ -38,4 +39,19 @@ application {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.jar {
+    manifest {
+        attributes("Main-Class" to "com.autoloupe.pipeline.AutoloupeApplication")
+    }
+}
+
+tasks.shadowJar {
+    archiveBaseName.set("autoloupe-pipeline")
+    archiveClassifier.set("all")
+    archiveVersion.set("1.0-SNAPSHOT")
+
+    // This explicitly guarantees your output filename is:
+    // autoloupe-pipeline-1.0-SNAPSHOT-all.jar
 }

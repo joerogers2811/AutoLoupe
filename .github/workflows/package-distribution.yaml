@@ -1,0 +1,73 @@
+name: Package and Publish Autoloupe Distribution
+
+on:
+  push:
+    branches: [ "main" ]
+  release:
+    types: [ "published" ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-installer:
+    name: Build Standalone Windows Installer
+    runs-on: windows-latest
+
+    steps:
+      # 1. Pull down the latest repository source code
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      # 2. Provision an explicit, modern JDK environment supporting jpackage
+      - name: Set Up Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle' # Automatically caches Gradle dependencies and wrappers
+
+      # 3. Grant execute permissions to the Gradle wrapper (Just in case)
+      - name: Validate Gradle Wrapper Permissions
+        run: git update-index --chmod=+x gradlew
+        shell: bash
+
+      # 4. Compile code and assemble the Plain Java Fat JAR
+      - name: Build Executable Fat JAR with Gradle
+        run: ./gradlew shadowJar
+
+      # 5. Execute jpackage pointing to your Gradle build artifact destination
+      - name: Build Native Windows Installer via jpackage
+        run: |
+          jpackage `
+            --name "Autoloupe" `
+            --app-version "1.0.0" `
+            --description "Automated photo triage pipeline" `
+            --vendor "Autoloupe Open Source" `
+            --input build/libs/ `
+            --main-jar autoloupe-pipeline-1.0-SNAPSHOT-all.jar `
+            --type msi `
+            --win-dir-chooser `
+            --win-shortcut `
+            --win-menu `
+            --dest dist/
+
+      # 6. For standard pushes to main, save the artifact to the GitHub Action run logs
+      - name: Upload Installer as Build Artifact
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Autoloupe-Windows-Installer
+          path: dist/*.msi
+          retention-days: 7
+
+      # 7. For official published Releases, automatically attach the .msi to the release assets
+      - name: Upload Installer to GitHub Release Assets
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/*.msi
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
