@@ -50,6 +50,7 @@ jobs:
             --win-dir-chooser `
             --win-shortcut `
             --win-menu `
+            --win-console `
             --dest dist/
 
       # 6. For standard pushes to main, save the artifact to the GitHub Action run logs
