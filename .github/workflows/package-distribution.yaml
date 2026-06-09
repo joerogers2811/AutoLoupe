@@ -46,6 +46,7 @@ jobs:
             --vendor "Autoloupe Open Source" `
             --input build/libs/ `
             --main-jar autoloupe-pipeline-1.0-SNAPSHOT-all.jar `
+            --main-class com.autoloupe.pipeline.Main `
             --type msi `
             --win-dir-chooser `
             --win-shortcut `
