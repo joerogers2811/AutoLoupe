@@ -1,4 +1,4 @@
-package com.autoloupe.pipeline.factory.impl;
+package com.autoloupe.pipeline.ingest.factory.impl;
 
 import com.autoloupe.pipeline.ingest.factory.impl.PentaxAssetFactory;
 import com.drew.metadata.Metadata;

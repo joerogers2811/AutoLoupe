@@ -1,4 +1,4 @@
-package com.autoloupe.pipeline.factory;
+package com.autoloupe.pipeline.ingest.factory;
 
 import com.autoloupe.pipeline.ingest.factory.ImageAssetFactoryComposite;
 import com.drew.metadata.Metadata;
