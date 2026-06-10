@@ -28,10 +28,6 @@ public class AutoLoupePipeline implements AutoCloseable {
     private final IngestEngine ingestEngine;
 
     public AutoLoupePipeline(Path ingestFolder) throws IOException, OrtException {
-        this(ingestFolder, false);
-    }
-
-    public AutoLoupePipeline(Path ingestFolder, boolean oneShotMode) throws IOException, OrtException {
         this.ingestFolder = ingestFolder;
         ensureIngestFolderExists();
 
@@ -49,8 +45,7 @@ public class AutoLoupePipeline implements AutoCloseable {
                 ingestFolder,
                 new ImageAssetFactoryComposite(),
                 evaluationEngine::submitForAnalysis,
-                new PreviewExtractionStrategyRegistry(),
-                oneShotMode
+                new PreviewExtractionStrategyRegistry()
         );
     }
 

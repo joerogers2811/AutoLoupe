@@ -3,7 +3,6 @@ package com.autoloupe.pipeline.ingest;
 import com.autoloupe.pipeline.domain.AnalysisTransaction;
 import com.autoloupe.pipeline.ingest.extraction.PreviewExtractionStrategyRegistry;
 import com.autoloupe.pipeline.ingest.factory.ImageAssetFactoryComposite;
-import com.autoloupe.pipeline.service.QuarantineHandler;
 import com.autoloupe.pipeline.exception.AssetParsingException;
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
@@ -29,7 +28,6 @@ public class IngestEngine implements Runnable, AutoCloseable {
     private final Consumer<AnalysisTransaction> downstreamPipeline;
     private final ImageAssetFactoryComposite factoryRegistry;
     private final PreviewExtractionStrategyRegistry extractionStrategies;
-    private final QuarantineHandler quarantineHandler;
     private final ExecutorService ioWorkerPool;
     private final boolean oneShotMode;
 
@@ -52,23 +50,11 @@ public class IngestEngine implements Runnable, AutoCloseable {
             PreviewExtractionStrategyRegistry extractionStrategies,
             boolean oneShotMode
     ) {
-        this(ingestDirectory, factoryRegistry, downstreamPipeline, extractionStrategies, oneShotMode, new QuarantineHandler());
-    }
-
-    public IngestEngine(
-            Path ingestDirectory,
-            ImageAssetFactoryComposite factoryRegistry,
-            Consumer<AnalysisTransaction> downstreamPipeline,
-            PreviewExtractionStrategyRegistry extractionStrategies,
-            boolean oneShotMode,
-            QuarantineHandler quarantineHandler
-    ) {
         this.ingestDirectory = ingestDirectory;
         this.factoryRegistry = factoryRegistry;
         this.downstreamPipeline = downstreamPipeline;
         this.extractionStrategies = extractionStrategies;
         this.oneShotMode = oneShotMode;
-        this.quarantineHandler = quarantineHandler;
         this.ioWorkerPool = Executors.newVirtualThreadPerTaskExecutor();
         this.ioPermitGate = new Semaphore(4); // Up to 4 massive images actively parsed at any millisecond
     }
@@ -124,11 +110,6 @@ public class IngestEngine implements Runnable, AutoCloseable {
     }
 
     private void secureAndProcessAsset(Path targetPath) {
-        // Step 1: Wait out the OS file allocation stream (virtual threads park safely here)
-        if (!quarantineHandler.waitForWriteCompletion(targetPath)) {
-            log.warn("[Auto Loupe] Aborting ingest: File {} timed out during quarantine.", targetPath.getFileName());
-            return;
-        }
 
         // Step 2: Pass through our backpressure gate to preserve RAM against high-MP files
         try {
